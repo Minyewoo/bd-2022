@@ -6,6 +6,7 @@ import mmap
 from concurrent.futures import ThreadPoolExecutor
 import math
 
+
 def generate_file(size_gb: int, filename):
     bytes_in_gb = int(1e9)
     uint32_size = 4
@@ -14,7 +15,9 @@ def generate_file(size_gb: int, filename):
 
     with open(filename, 'wb') as f:
         for i in tqdm(range(total_steps)):
-            f.write(random.randint(0, uint32_right_border).to_bytes(uint32_size, byteorder='big', signed=False))
+            f.write(random.randint(0, uint32_right_border).to_bytes(
+                uint32_size, byteorder='big', signed=False))
+
 
 def get_sum(descriptor):
     uint32_size = 4
@@ -26,7 +29,7 @@ def get_sum(descriptor):
         bytes = descriptor.read(uint32_size)
 
     return sum
-    
+
 
 def get_sum_streightforward(filename):
     with open(filename, 'rb') as f:
@@ -49,14 +52,16 @@ def mmap_file_parts(descriptor, max_workers):
 
         yield mmap.mmap(descriptor.fileno(), length=length, offset=offset, prot=mmap.PROT_READ)
 
+
 def get_sum_concurrently(filename):
     sum = 0
     with ThreadPoolExecutor() as executor:
         with open(filename, 'rb') as f:
             for result in executor.map(get_sum, mmap_file_parts(f, max_workers=executor._max_workers)):
-                    sum+=result
-        
+                sum += result
+
     return sum
+
 
 def measure(label, func):
     print('Measuring %s' % label)
@@ -67,6 +72,7 @@ def measure(label, func):
     print("Result: " + str(result))
     return result, time_score
 
+
 if __name__ == '__main__':
     filename = 'data'
     size_gb = 2
@@ -75,12 +81,17 @@ if __name__ == '__main__':
         print('Generating random numbers...')
         generate_file(size_gb, filename)
 
-    streightforward_result, streightforward_time = measure('streightforward sum', lambda: get_sum_streightforward(filename))
-    concurrent_result, concurrent_time = measure('mm concurrent sum', lambda: get_sum_concurrently(filename))
-    
-    print('Results are the same: %s' % (streightforward_result == concurrent_result))
+    streightforward_result, streightforward_time = measure(
+        'streightforward sum', lambda: get_sum_streightforward(filename))
+    concurrent_result, concurrent_time = measure(
+        'mm concurrent sum', lambda: get_sum_concurrently(filename))
+
+    print('Results are the same: %s' %
+          (streightforward_result == concurrent_result))
 
     if concurrent_time > streightforward_time:
-        print('Streightforward is faster on %s seconds' % (concurrent_time-streightforward_time))
+        print('Streightforward is faster on %s seconds' %
+              (concurrent_time-streightforward_time))
     else:
-        print('Concurrent is faster on %s seconds' % (streightforward_time-concurrent_time))
+        print('Concurrent is faster on %s seconds' %
+              (streightforward_time-concurrent_time))
